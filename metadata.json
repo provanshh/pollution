@@ -1,0 +1,7 @@
+{
+  "name": "EcoWard - Ward-Wise Pollution Action Dashboard",
+  "description": "A full-stack ready web platform for localized, ward-level air pollution monitoring, AI-driven forecasting, and actionable governance.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
