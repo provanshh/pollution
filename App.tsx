@@ -10,6 +10,7 @@ import AdminView from './components/AdminView';
 import CitizenView from './components/CitizenView';
 import TrendsView from './components/TrendsView';
 import VoiceAssistant from './components/VoiceAssistant';
+import LiveMonitorCard from './components/LiveMonitorCard';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewMode>(ViewMode.LANDING);
@@ -68,6 +69,11 @@ const App: React.FC = () => {
                  <WardSearch wards={wards} onSelect={handleWardSelect} />
              </div>
 
+             {/* Live Monitor Summary Card */}
+             {selectedWard && (
+                 <LiveMonitorCard ward={selectedWard} />
+             )}
+
              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
                 {/* Map Panel */}
                 <div className="lg:col-span-5 flex flex-col h-[500px] lg:h-auto">
@@ -86,7 +92,7 @@ const App: React.FC = () => {
                 
                 {/* Analytics Panel */}
                 <div className="lg:col-span-7 h-auto lg:h-full min-h-[600px]">
-                    {selectedWard && <WardAnalytics ward={selectedWard} />}
+                    {selectedWard && <WardAnalytics ward={selectedWard} allWards={wards} />}
                 </div>
             </div>
           </div>

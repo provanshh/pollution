@@ -59,29 +59,41 @@ export const getForecastInsights = async (wards: Ward[]): Promise<string> => {
     }
 }
 
-export const getChatResponse = async (query: string, wards: Ward[]): Promise<string> => {
-    if (!aiClient) return "I am running in simulation mode. Based on the data, Okhla has the highest pollution today. Try connecting an API key for live AI responses.";
+export const getChatResponse = async (query: string, wards: Ward[], language: 'en' | 'hi' = 'en'): Promise<string> => {
+    if (!aiClient) return language === 'hi' 
+        ? "नमस्ते, मैं सिमुलेशन मोड में चल रहा हूँ। कृपया API कुंजी जोड़ें।" 
+        : "I am running in simulation mode. Try connecting an API key for live AI responses.";
     
-    // Create a lean context string to avoid token limits
+    // Create a lean context string
     const context = wards.map(w => `${w.name}: ${w.aqi} AQI (${w.category})`).join('; ');
     
     const prompt = `
-        You are EcoBot, an intelligent voice assistant for the Delhi Air Quality Dashboard.
-        Current Ward Data: ${context}.
+        You are EcoBot, an intelligent voice assistant for the Pollution Dashboard.
         
-        User Question: "${query}"
+        CONTEXT DATA (Local Sensors):
+        ${context}
         
-        Answer the user's question concisely (max 2 sentences). If they ask about the worst ward, identify the one with highest AQI. If they ask for advice, give a quick health tip. Speak naturally.
+        USER QUERY: "${query}"
+        
+        INSTRUCTIONS:
+        1. Language: Reply strictly in ${language === 'hi' ? 'Hindi (Simple conversational)' : 'English'}.
+        2. Data Source: 
+           - If the user asks about the wards listed in the Context Data, use that data.
+           - If the user asks about general air quality facts, health advice, or real-world news (e.g. "What is the AQI in New York?"), use Google Search.
+        3. Style: Keep the answer concise (max 2-3 sentences) suitable for voice speech.
     `;
 
     try {
         const response = await aiClient.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }]
+            }
         });
-        return response.text || "I couldn't process that question.";
+        return response.text || (language === 'hi' ? "क्षमा करें, मैं समझ नहीं पाया।" : "I couldn't process that question.");
     } catch (error) {
         console.error("Gemini Chat Error:", error);
-        return "I'm having trouble connecting to my servers right now.";
+        return language === 'hi' ? "कनेक्शन में समस्या है।" : "I'm having trouble connecting right now.";
     }
 }

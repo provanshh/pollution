@@ -37,30 +37,30 @@ const LandingPage: React.FC<LandingPageProps> = ({ wards, onWardSelect, onStart 
              <div className="lg:w-1/2 space-y-8 text-center lg:text-left">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-200 text-sm font-medium animate-fade-in">
                     <Radio size={14} className="animate-pulse text-red-500" />
-                    Live Sensor Network Active • {wards.length} Delhi Wards
+                    Live Sensor Network Active • Pan-India Coverage
                 </div>
                 
                 <h1 className="text-4xl lg:text-6xl font-extrabold tracking-tight leading-tight">
                     Real-Time Air Quality<br/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-400">Intelligence for Delhi</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-400">Intelligence Platform</span>
                 </h1>
                 
                 <p className="text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
                     Identify pollution hotspots instantly. 
-                    Search any ward like <strong>Shahdara</strong> or <strong>Connaught Place</strong> to get live, sensor-driven insights.
+                    Search any location like <strong>Connaught Place</strong>, <strong>Bandra West</strong>, or <strong>Indiranagar</strong> to get live, sensor-driven insights.
                 </p>
 
                 {/* Search Bar Container */}
                 <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 max-w-lg mx-auto lg:mx-0 shadow-2xl relative z-20">
                     <div className="flex items-center gap-2 mb-2 text-slate-300 text-xs font-semibold tracking-wide">
-                        <Search size={12} /> SEARCH LOCATION
+                        <Search size={12} /> SEARCH WARD / CITY
                     </div>
                     <WardSearch wards={wards} onSelect={onWardSelect} />
                     <div className="mt-4 flex gap-2 text-xs text-slate-400 px-1 overflow-x-auto whitespace-nowrap scrollbar-hide">
                             <span className="opacity-70">Trending:</span>
-                            <span className="bg-white/5 px-2 py-1 rounded cursor-pointer hover:bg-white/10 hover:text-white transition-colors border border-transparent hover:border-white/20">📍 Shahdara</span>
-                            <span className="bg-white/5 px-2 py-1 rounded cursor-pointer hover:bg-white/10 hover:text-white transition-colors border border-transparent hover:border-white/20">📍 Connaught Place</span>
-                            <span className="bg-white/5 px-2 py-1 rounded cursor-pointer hover:bg-white/10 hover:text-white transition-colors border border-transparent hover:border-white/20">📍 Okhla</span>
+                            <span className="bg-white/5 px-2 py-1 rounded cursor-pointer hover:bg-white/10 hover:text-white transition-colors border border-transparent hover:border-white/20">📍 Delhi</span>
+                            <span className="bg-white/5 px-2 py-1 rounded cursor-pointer hover:bg-white/10 hover:text-white transition-colors border border-transparent hover:border-white/20">📍 Mumbai</span>
+                            <span className="bg-white/5 px-2 py-1 rounded cursor-pointer hover:bg-white/10 hover:text-white transition-colors border border-transparent hover:border-white/20">📍 Bangalore</span>
                     </div>
                 </div>
 
@@ -69,7 +69,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ wards, onWardSelect, onStart 
                         onClick={onStart}
                         className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/40 transition-all flex items-center justify-center gap-2 transform hover:scale-105"
                     >
-                        Access Dashboard <ArrowRight size={18} />
+                        Access National Dashboard <ArrowRight size={18} />
                     </button>
                 </div>
             </div>
@@ -81,7 +81,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ wards, onWardSelect, onStart 
                     <div className="bg-slate-900 px-4 py-3 border-b border-slate-700 flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <Activity size={16} className="text-blue-500"/> 
-                            <span className="font-bold text-slate-200 text-sm tracking-wide">LIVE POLLUTION MAP</span>
+                            <span className="font-bold text-slate-200 text-sm tracking-wide">NATIONAL POLLUTION GRID</span>
                         </div>
                         <div className="flex gap-2 text-[10px] font-mono text-slate-400 items-center">
                              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
@@ -98,7 +98,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ wards, onWardSelect, onStart 
                         {/* Overlay CTA */}
                         <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                             <span className="bg-black/70 text-white text-xs px-3 py-1 rounded-full backdrop-blur">
-                                Click any ward to view details
+                                Select a ward to analyze
                             </span>
                         </div>
                     </div>
@@ -111,7 +111,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ wards, onWardSelect, onStart 
             <div className="animate-marquee whitespace-nowrap flex gap-12 px-4">
                 {[...wards, ...wards].map((w, i) => (
                     <div key={`${w.id}-${i}`} className="flex items-center gap-3 text-sm font-mono text-slate-400">
-                        <span className="font-bold text-slate-200">{w.name.split('/')[0]}</span>
+                        <span className="font-bold text-slate-200">{w.name.split(',')[0]}</span>
                         <div className="h-4 w-px bg-slate-700"></div>
                         <span className={`font-bold ${w.aqi > 200 ? 'text-red-500' : w.aqi > 100 ? 'text-orange-400' : 'text-green-400'}`}>
                             {w.aqi} AQI
@@ -159,7 +159,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ wards, onWardSelect, onStart 
                         <Globe className="text-blue-600" /> Live Satellite Exploration
                     </h2>
                     <p className="mt-2 text-slate-600">
-                        Navigate the full interactive map of New Delhi. Pan across neighborhoods to visualize geographical pollution spread and green cover density.
+                        Navigate the full interactive map of India. Pan across cities to visualize geographical pollution spread and green cover density.
                     </p>
                 </div>
                 <button 
@@ -171,11 +171,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ wards, onWardSelect, onStart 
             </div>
             
             <div className="relative w-full h-[600px] bg-slate-100 rounded-3xl overflow-hidden shadow-2xl ring-1 ring-slate-900/5 group">
+                {/* Updated to focus on India */}
                 <iframe 
                     width="100%" 
                     height="100%" 
                     id="gmap_canvas" 
-                    src="https://maps.google.com/maps?q=New%20Delhi%2C%20India&t=k&z=11&ie=UTF8&iwloc=&output=embed" 
+                    src="https://maps.google.com/maps?q=India&t=k&z=5&ie=UTF8&iwloc=&output=embed" 
                     frameBorder="0" 
                     scrolling="no" 
                     marginHeight={0} 
@@ -193,7 +194,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ wards, onWardSelect, onStart 
                     </div>
                     <div>
                         <div className="text-xs font-bold text-slate-900 leading-none">SATELLITE VIEW</div>
-                        <div className="text-[10px] text-slate-500 font-mono mt-0.5">LAT: 28.6139° N, LONG: 77.2090° E</div>
+                        <div className="text-[10px] text-slate-500 font-mono mt-0.5">PAN-INDIA MONITORING</div>
                     </div>
                 </div>
 

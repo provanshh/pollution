@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, X, MoreHorizontal, Volume2, Bot } from 'lucide-react';
+import { Mic, X, MoreHorizontal, Volume2, Bot, Languages } from 'lucide-react';
 import { Ward } from '../types';
 import { getChatResponse } from '../services/geminiService';
 
@@ -14,6 +14,7 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ wards }) => {
   const [isThinking, setIsThinking] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [response, setResponse] = useState('');
+  const [language, setLanguage] = useState<'en' | 'hi'>('en');
   
   const recognitionRef = useRef<any>(null);
 
@@ -24,7 +25,8 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ wards }) => {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = 'en-US';
+      // Set language based on state
+      recognitionRef.current.lang = language === 'hi' ? 'hi-IN' : 'en-US';
 
       recognitionRef.current.onresult = (event: any) => {
         const text = event.results[0][0].transcript;
@@ -39,14 +41,14 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ wards }) => {
       recognitionRef.current.onerror = (event: any) => {
         console.error('Speech recognition error', event.error);
         setIsListening(false);
-        setResponse("Sorry, I didn't catch that. Please try again.");
+        setResponse(language === 'hi' ? "क्षमा करें, दोबारा बोलें।" : "Sorry, I didn't catch that.");
       };
     }
-  }, [wards]);
+  }, [wards, language]); // Re-initialize when language changes
 
   const handleQuery = async (text: string) => {
     setIsThinking(true);
-    const answer = await getChatResponse(text, wards);
+    const answer = await getChatResponse(text, wards, language);
     setIsThinking(false);
     setResponse(answer);
     speak(answer);
@@ -71,6 +73,14 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ wards }) => {
     if ('speechSynthesis' in window) {
       setIsSpeaking(true);
       const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Attempt to set a voice appropriate for the language
+      const voices = window.speechSynthesis.getVoices();
+      const langCode = language === 'hi' ? 'hi-IN' : 'en-US';
+      const voice = voices.find(v => v.lang.includes(langCode));
+      if (voice) utterance.voice = voice;
+      utterance.lang = langCode;
+
       utterance.onend = () => setIsSpeaking(false);
       window.speechSynthesis.speak(utterance);
     }
@@ -83,6 +93,10 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ wards }) => {
       }
   }
 
+  const toggleLanguage = () => {
+      setLanguage(prev => prev === 'en' ? 'hi' : 'en');
+  }
+
   if (!isOpen) {
     return (
       <button 
@@ -90,7 +104,9 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ wards }) => {
         className="fixed bottom-6 right-6 p-4 bg-blue-600 text-white rounded-full shadow-2xl hover:bg-blue-500 transition-all hover:scale-110 z-50 flex items-center justify-center group"
       >
         <Bot size={28} />
-        <span className="absolute right-full mr-3 bg-slate-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Ask EcoBot</span>
+        <span className="absolute right-full mr-3 bg-slate-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            {language === 'hi' ? 'ईको-बॉट से पूछें' : 'Ask EcoBot'}
+        </span>
       </button>
     );
   }
@@ -101,18 +117,29 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ wards }) => {
       <div className="bg-blue-600 p-4 flex justify-between items-center text-white">
         <div className="flex items-center gap-2">
             <Bot size={20} />
-            <span className="font-bold">EcoBot Assistant</span>
+            <span className="font-bold">EcoBot {language === 'hi' && '(हिंदी)'}</span>
         </div>
-        <button onClick={() => { stopSpeaking(); setIsOpen(false); }} className="hover:bg-blue-700 p-1 rounded">
-            <X size={18} />
-        </button>
+        <div className="flex items-center gap-2">
+            <button 
+                onClick={toggleLanguage} 
+                className="hover:bg-blue-700 p-1.5 rounded text-xs font-bold border border-blue-400 flex items-center gap-1"
+                title="Switch Language"
+            >
+                <Languages size={14} /> {language.toUpperCase()}
+            </button>
+            <button onClick={() => { stopSpeaking(); setIsOpen(false); }} className="hover:bg-blue-700 p-1 rounded">
+                <X size={18} />
+            </button>
+        </div>
       </div>
 
       {/* Content */}
       <div className="p-4 flex-1 min-h-[150px] bg-slate-50 flex flex-col gap-3 max-h-80 overflow-y-auto">
         {!transcript && !response && (
             <div className="text-center text-slate-400 text-sm mt-4">
-                Tap the mic and ask about air quality, specific wards, or health advice.
+                {language === 'hi' 
+                    ? 'माइक पर टैप करें और वायु गुणवत्ता के बारे में पूछें।' 
+                    : 'Tap the mic and ask about air quality, specific wards, or health advice.'}
             </div>
         )}
         
@@ -124,7 +151,7 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ wards }) => {
 
         {isThinking && (
             <div className="self-start bg-white border border-slate-200 px-3 py-2 rounded-t-xl rounded-br-xl text-sm flex items-center gap-2 text-slate-500">
-                <MoreHorizontal size={16} className="animate-pulse" /> Thinking...
+                <MoreHorizontal size={16} className="animate-pulse" /> {language === 'hi' ? 'सोच रहा हूँ...' : 'Thinking...'}
             </div>
         )}
 

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Ward, AQICategory } from '../types';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, ScatterChart, Scatter } from 'recharts';
-import { Wind, Droplets, Thermometer, Factory, Activity, Zap, AlertTriangle, TrendingUp, TrendingDown, RefreshCw, Car, HardHat } from 'lucide-react';
+import { Wind, Droplets, Thermometer, Factory, Activity, Zap, AlertTriangle, TrendingUp, TrendingDown, RefreshCw, Car, HardHat, Plus, X, ArrowRightLeft } from 'lucide-react';
 import { getWardAnalysis } from '../services/geminiService';
 
 interface WardAnalyticsProps {
   ward: Ward;
+  allWards: Ward[];
 }
 
 interface TabButtonProps {
@@ -45,10 +46,11 @@ const MetricCard = ({ label, value, unit, icon, trend }: any) => (
     </div>
 );
 
-const WardAnalytics: React.FC<WardAnalyticsProps> = ({ ward }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'forecast' | 'correlation'>('overview');
+const WardAnalytics: React.FC<WardAnalyticsProps> = ({ ward, allWards }) => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'forecast' | 'correlation' | 'compare'>('overview');
   const [aiAnalysis, setAiAnalysis] = useState<string>("");
   const [loadingAi, setLoadingAi] = useState(false);
+  const [comparisonIds, setComparisonIds] = useState<string[]>([]);
 
   const handleGenerateInsight = async () => {
     setLoadingAi(true);
@@ -57,16 +59,29 @@ const WardAnalytics: React.FC<WardAnalyticsProps> = ({ ward }) => {
     setLoadingAi(false);
   };
 
+  const comparisonWards = allWards.filter(w => comparisonIds.includes(w.id));
+  const availableWards = allWards.filter(w => w.id !== ward.id && !comparisonIds.includes(w.id));
+
+  // Data Preparations
   const trendData = ward.trend.map((val, idx) => ({ time: `${idx}:00`, aqi: val }));
   
-  // Forecast data now includes a specific 'threshold' key for comparison
   const forecastData = ward.forecast.map((val, idx) => ({ 
     time: `+${idx+1}h`, 
     aqi: val, 
     threshold: 100 
   }));
+
+  // Comparison Forecast Data Merging
+  const comparisonForecastData = ward.forecast.map((_, i) => {
+      const point: any = { time: `+${i+1}h` };
+      point[ward.name] = ward.forecast[i];
+      comparisonWards.forEach(cw => {
+          point[cw.name] = cw.forecast[i];
+      });
+      return point;
+  });
   
-  // Simulated correlation data
+  // Correlation Data
   const correlationData = Array.from({ length: 12 }, (_, i) => ({
       hour: i,
       aqi: ward.trend[i * 2] || 100,
@@ -93,19 +108,17 @@ const WardAnalytics: React.FC<WardAnalyticsProps> = ({ ward }) => {
     }
   };
 
-  const getPrimaryPollutant = () => {
-    const entries = Object.entries(ward.pollutants);
-    if (entries.length === 0) return 'N/A';
-    // Find max value
+  const getPrimaryPollutant = (w: Ward = ward) => {
+    const entries = Object.entries(w.pollutants);
+    if (entries.length === 0) return { name: 'N/A', val: 0 };
     const maxEntry = entries.reduce((max, current) => current[1] > max[1] ? current : max, entries[0]);
-    // Format name (e.g., pm25 -> PM2.5)
     let name = maxEntry[0].toUpperCase();
     if (name === 'PM25') name = 'PM2.5';
     if (name === 'PM10') name = 'PM10';
-    return name;
+    return { name, val: maxEntry[1] };
   };
 
-  const primaryPollutant = getPrimaryPollutant();
+  const primaryPollutant = getPrimaryPollutant(ward).name;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 h-full flex flex-col overflow-hidden">
@@ -189,6 +202,7 @@ const WardAnalytics: React.FC<WardAnalyticsProps> = ({ ward }) => {
             <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')}>Overview & Trends</TabButton>
             <TabButton active={activeTab === 'forecast'} onClick={() => setActiveTab('forecast')}>AI Forecast</TabButton>
             <TabButton active={activeTab === 'correlation'} onClick={() => setActiveTab('correlation')}>Source Correlation</TabButton>
+            <TabButton active={activeTab === 'compare'} onClick={() => setActiveTab('compare')}>Compare</TabButton>
         </div>
 
         <div className="min-h-[300px]">
@@ -297,6 +311,106 @@ const WardAnalytics: React.FC<WardAnalyticsProps> = ({ ward }) => {
                                 <Legend />
                                 <Line yAxisId="left" type="monotone" dataKey="aqi" name="AQI Level" stroke="#3b82f6" strokeWidth={2} />
                                 <Line yAxisId="right" type="monotone" dataKey="traffic" name="Traffic Index" stroke="#f59e0b" strokeWidth={2} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            )}
+            
+            {activeTab === 'compare' && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                    {/* Controls */}
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold text-slate-800">Compare with other wards</h4>
+                            <span className="text-xs text-slate-400">{comparisonIds.length}/2 Selected</span>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2">
+                             {/* Selected Chips */}
+                             <div className="bg-blue-50 text-blue-800 border border-blue-200 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2">
+                                {ward.name} <span className="bg-blue-200 text-blue-800 text-[10px] px-1 rounded">Current</span>
+                             </div>
+                             {comparisonWards.map(cw => (
+                                 <div key={cw.id} className="bg-slate-100 text-slate-800 border border-slate-200 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2">
+                                     {cw.name}
+                                     <button onClick={() => setComparisonIds(prev => prev.filter(id => id !== cw.id))} className="hover:text-red-500">
+                                        <X size={14} />
+                                     </button>
+                                 </div>
+                             ))}
+                             
+                             {/* Selector */}
+                             {comparisonIds.length < 2 && (
+                                 <div className="relative group">
+                                     <button className="flex items-center gap-1 bg-white border border-dashed border-slate-300 text-slate-500 px-3 py-1.5 rounded-full text-xs hover:border-slate-400 hover:text-slate-700 transition-colors">
+                                        <Plus size={14} /> Add Ward
+                                     </button>
+                                     <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-slate-200 shadow-xl rounded-lg max-h-48 overflow-y-auto hidden group-hover:block z-50">
+                                         {availableWards.map(aw => (
+                                             <button 
+                                                key={aw.id}
+                                                onClick={() => setComparisonIds(prev => [...prev, aw.id])}
+                                                className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 border-b border-slate-50 last:border-0"
+                                             >
+                                                 {aw.name}
+                                             </button>
+                                         ))}
+                                     </div>
+                                 </div>
+                             )}
+                        </div>
+                    </div>
+
+                    {/* Stats Comparison Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[ward, ...comparisonWards].map((w, index) => {
+                            const prim = getPrimaryPollutant(w);
+                            return (
+                            <div key={w.id} className={`p-4 rounded-xl border ${index === 0 ? 'bg-blue-50/30 border-blue-200' : 'bg-slate-50 border-slate-200'}`}>
+                                <h5 className="font-bold text-slate-800 text-sm truncate mb-3">{w.name}</h5>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs text-slate-500">AQI</span>
+                                        <span className={`font-black text-xl ${getAQIColor(w.category)}`}>{w.aqi}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs text-slate-500">Primary ({prim.name})</span>
+                                        <span className="font-mono font-bold text-slate-700 text-sm">{prim.val}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs text-slate-500">Traffic</span>
+                                        <div className="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                            <div className="bg-slate-500 h-full" style={{width: `${w.trafficIndex}%`}}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )})}
+                    </div>
+
+                    {/* Comparative Chart */}
+                    <div className="h-64 w-full">
+                        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Forecast Comparison (24h)</h4>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={comparisonForecastData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                <XAxis dataKey="time" tick={{fontSize: 10}} />
+                                <YAxis tick={{fontSize: 10}} />
+                                <Tooltip contentStyle={{borderRadius: '8px'}} />
+                                <Legend wrapperStyle={{fontSize: '12px'}} />
+                                <Line type="monotone" dataKey={ward.name} stroke="#2563eb" strokeWidth={3} dot={false} />
+                                {comparisonWards.map((cw, idx) => (
+                                    <Line 
+                                        key={cw.id} 
+                                        type="monotone" 
+                                        dataKey={cw.name} 
+                                        stroke={idx === 0 ? '#ea580c' : '#16a34a'} 
+                                        strokeWidth={2} 
+                                        dot={false} 
+                                        strokeDasharray="5 5"
+                                    />
+                                ))}
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
