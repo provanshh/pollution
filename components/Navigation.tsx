@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewMode } from '../types';
-import { Wind, LayoutDashboard, ShieldAlert, Users, Settings, BarChart3 } from 'lucide-react';
+import { Wind, LayoutDashboard, ShieldAlert, Users, Settings, BarChart3, Newspaper } from 'lucide-react';
 
 interface NavigationProps {
   currentView: ViewMode;
@@ -41,6 +41,10 @@ const Navigation: React.FC<NavigationProps> = ({ currentView, setView }) => {
             <button className={navItemClass(ViewMode.ADMIN)} onClick={() => setView(ViewMode.ADMIN)}>
               <Settings size={16} />
               <span>Policy & Admin</span>
+            </button>
+            <button className={navItemClass(ViewMode.NEWS)} onClick={() => setView(ViewMode.NEWS)}>
+              <Newspaper size={16} />
+              <span>News & Info</span>
             </button>
             <button className={navItemClass(ViewMode.CITIZEN)} onClick={() => setView(ViewMode.CITIZEN)}>
               <Users size={16} />

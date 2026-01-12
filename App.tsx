@@ -12,6 +12,7 @@ import TrendsView from './components/TrendsView';
 import VoiceAssistant from './components/VoiceAssistant';
 import LiveMonitorCard from './components/LiveMonitorCard';
 import HeatmapWidget from './components/HeatmapWidget';
+import NewsView from './components/NewsView';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewMode>(ViewMode.LANDING);
@@ -110,6 +111,10 @@ const App: React.FC = () => {
 
         {view === ViewMode.ADMIN && (
             <AdminView wards={wards} />
+        )}
+
+        {view === ViewMode.NEWS && (
+            <NewsView wards={wards} />
         )}
 
         {view === ViewMode.CITIZEN && (

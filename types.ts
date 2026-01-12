@@ -1,3 +1,4 @@
+
 export enum AQICategory {
   GOOD = 'Good',
   MODERATE = 'Moderate',
@@ -70,5 +71,6 @@ export enum ViewMode {
   DASHBOARD = 'DASHBOARD',
   TRENDS = 'TRENDS',
   ADMIN = 'ADMIN',
+  NEWS = 'NEWS',
   CITIZEN = 'CITIZEN'
 }
