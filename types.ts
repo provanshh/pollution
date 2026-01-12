@@ -48,6 +48,23 @@ export interface ActionPlan {
   targetWardId?: string;
 }
 
+export interface CitizenReport {
+  id: string;
+  type: 'Garbage Burning' | 'Construction Dust' | 'Industrial Smoke' | 'Vehicle Emission' | 'Other';
+  description: string;
+  timestamp: number;
+  status: 'Received' | 'Investigating' | 'Resolved';
+  location: string;
+}
+
+export interface GovAction {
+  id: string;
+  title: string;
+  status: 'Ongoing' | 'Planned' | 'Completed';
+  department: string;
+  lastUpdated: string;
+}
+
 export enum ViewMode {
   LANDING = 'LANDING',
   DASHBOARD = 'DASHBOARD',

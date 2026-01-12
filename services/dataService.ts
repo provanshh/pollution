@@ -1,4 +1,4 @@
-import { Ward, AQICategory, PollutantBreakdown, WeatherData } from '../types';
+import { Ward, AQICategory, PollutantBreakdown, WeatherData, GovAction } from '../types';
 
 // Expanded Metadata for Pan-India Coverage
 const CITIES_METADATA = [
@@ -152,4 +152,40 @@ export const simulateLiveUpdate = (wards: Ward[]): Ward[] => {
       }
     };
   });
+};
+
+export const getGovActions = (ward: Ward): GovAction[] => {
+    const actions: GovAction[] = [
+        { id: '1', title: 'Road Dust Sweeping', status: 'Ongoing', department: 'Municipal Corp', lastUpdated: '2h ago' },
+        { id: '2', title: 'Construction Site Inspection', status: 'Completed', department: 'Pollution Control Board', lastUpdated: 'Yesterday' }
+    ];
+    
+    if (ward.aqi > 200) {
+        actions.unshift({ id: '3', title: 'Smog Gun Deployment', status: 'Ongoing', department: 'Emergency Response', lastUpdated: '10m ago' });
+        actions.push({ id: '4', title: 'Traffic Diversion at Main Chowk', status: 'Planned', department: 'Traffic Police', lastUpdated: 'Upcoming' });
+    }
+    
+    return actions;
+};
+
+// Generates a mock percentage breakdown of pollution sources
+export const getPollutionSources = (ward: Ward) => {
+    const isIndustrial = ward.primarySources.includes('Industrial');
+    const isTraffic = ward.primarySources.includes('Vehicular') || ward.primarySources.includes('Traffic');
+    
+    let vehicle = 30, dust = 20, industry = 10, other = 40;
+    
+    if (isTraffic) { vehicle = 55; dust = 15; industry = 5; other = 25; }
+    if (isIndustrial) { vehicle = 20; dust = 20; industry = 45; other = 15; }
+    
+    // Add random noise
+    vehicle = Math.max(0, vehicle + Math.floor(Math.random() * 10 - 5));
+    dust = Math.max(0, dust + Math.floor(Math.random() * 10 - 5));
+    
+    return [
+        { name: 'Vehicle Emissions', value: vehicle, color: '#ef4444' },
+        { name: 'Road Dust', value: dust, color: '#f59e0b' },
+        { name: 'Industrial', value: industry, color: '#6366f1' },
+        { name: 'Other (Bio-mass)', value: 100 - (vehicle + dust + industry), color: '#10b981' }
+    ];
 };

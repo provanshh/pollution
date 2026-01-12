@@ -59,6 +59,37 @@ export const getForecastInsights = async (wards: Ward[]): Promise<string> => {
     }
 }
 
+export const getPollutionCausalityAnalysis = async (ward: Ward): Promise<string> => {
+    if (!aiClient) return "Analysis unavailable without API Key. Likely causes: High traffic density and low wind speeds trapping pollutants.";
+
+    const prompt = `
+        You are an environmental scientist talking to a citizen.
+        Ward: ${ward.name}
+        AQI: ${ward.aqi} (${ward.category})
+        Pollutants: PM2.5 (${ward.pollutants.pm25}), NO2 (${ward.pollutants.no2})
+        Weather: Wind ${ward.weather.windSpeed} km/h, Temp ${ward.weather.temperature}C.
+        Traffic Index: ${ward.trafficIndex}/100.
+        
+        Question: "Why is my ward polluted right now?"
+        
+        Answer instructions:
+        1. Explain the primary cause in 1 simple sentence (e.g. "Heavy traffic on Main Road coupled with low wind is trapping smoke.").
+        2. Mention if weather is helping or hurting.
+        3. Be conversational and empathetic.
+        4. Max 50 words.
+    `;
+
+    try {
+        const response = await aiClient.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+        });
+        return response.text || "Analysis unavailable.";
+    } catch (error) {
+        return "System is currently unable to analyze specific causes.";
+    }
+}
+
 export const getChatResponse = async (query: string, wards: Ward[], language: 'en' | 'hi' = 'en'): Promise<string> => {
     if (!aiClient) return language === 'hi' 
         ? "नमस्ते, मैं सिमुलेशन मोड में चल रहा हूँ। कृपया API कुंजी जोड़ें।" 
