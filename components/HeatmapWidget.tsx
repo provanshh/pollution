@@ -1,23 +1,25 @@
 import React, { useState, useMemo } from 'react';
 import { Ward } from '../types';
-import { Calendar, TrendingDown, TrendingUp } from 'lucide-react';
+import { Calendar, TrendingDown, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface HeatmapWidgetProps {
   ward: Ward;
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const YEARS = [2022, 2023, 2024];
+const YEARS = [2022, 2023, 2024, 2025, 2026];
 
 const HeatmapWidget: React.FC<HeatmapWidgetProps> = ({ ward }) => {
   const [metric, setMetric] = useState<'AQI' | 'PM2.5'>('AQI');
+  const [startIndex, setStartIndex] = useState(0);
+  const VISIBLE_COUNT = 3;
 
   // Deterministally generate data based on Ward ID to ensure stability across re-renders
   const historicalData = useMemo(() => {
     const seed = ward.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     
     return YEARS.map((year, yIdx) => {
-      return MONTHS.map((month, mIdx) => {
+      const monthsData = MONTHS.map((month, mIdx) => {
         // Seasonality Factor (Indian Context)
         // Winter (Oct-Jan): High | Summer (Apr-Jun): Moderate | Monsoon (Jul-Sep): Good
         let seasonalBase = 100;
@@ -28,7 +30,14 @@ const HeatmapWidget: React.FC<HeatmapWidgetProps> = ({ ward }) => {
 
         // Random variations per ward/year
         const randomFactor = Math.sin(seed + yIdx * 10 + mIdx) * 30;
-        const trendFactor = (yIdx - 1) * -10; // Slight improvement year over year simulation
+        
+        // Trend Factor: Future years show improvement (simulating policy effect)
+        let trendFactor = 0;
+        if (year > 2024) {
+             trendFactor = (yIdx - 1) * -20; // Aggressive improvement for projections
+        } else {
+             trendFactor = (yIdx - 1) * -5; // Mild historic trend
+        }
 
         let val = Math.max(30, Math.round(seasonalBase + randomFactor + trendFactor));
         
@@ -43,8 +52,15 @@ const HeatmapWidget: React.FC<HeatmapWidgetProps> = ({ ward }) => {
            value: val
         };
       });
+
+      return {
+          year,
+          months: monthsData
+      };
     });
   }, [ward.id, metric]);
+
+  const visibleData = historicalData.slice(startIndex, startIndex + VISIBLE_COUNT);
 
   const getColor = (val: number) => {
     // Thresholds
@@ -76,6 +92,18 @@ const HeatmapWidget: React.FC<HeatmapWidgetProps> = ({ ward }) => {
       }
   };
 
+  const handleNext = () => {
+    if (startIndex + VISIBLE_COUNT < YEARS.length) {
+        setStartIndex(prev => prev + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (startIndex > 0) {
+        setStartIndex(prev => prev - 1);
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 animate-in fade-in slide-in-from-bottom-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -84,43 +112,74 @@ const HeatmapWidget: React.FC<HeatmapWidgetProps> = ({ ward }) => {
             <Calendar size={20} className="text-blue-500" />
             Seasonal Impact Calendar
           </h2>
-          <p className="text-sm text-slate-500">Historical {metric} heatmap (Month-on-Month)</p>
+          <p className="text-sm text-slate-500">Historical & Projected {metric} heatmap (Month-on-Month)</p>
         </div>
         
-        <div className="flex bg-slate-100 p-1 rounded-lg">
-            <button 
-                onClick={() => setMetric('AQI')}
-                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${metric === 'AQI' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-                AQI Index
-            </button>
-            <button 
-                onClick={() => setMetric('PM2.5')}
-                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${metric === 'PM2.5' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-                PM2.5 Levels
-            </button>
+        <div className="flex items-center gap-4">
+            <div className="flex bg-slate-100 p-1 rounded-lg">
+                <button 
+                    onClick={() => setMetric('AQI')}
+                    className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${metric === 'AQI' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                    AQI Index
+                </button>
+                <button 
+                    onClick={() => setMetric('PM2.5')}
+                    className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${metric === 'PM2.5' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                    PM2.5 Levels
+                </button>
+            </div>
+
+            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-100">
+                <button 
+                    onClick={handlePrev} 
+                    disabled={startIndex === 0}
+                    className="p-1.5 rounded-md hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:shadow-none text-slate-600 transition-all"
+                >
+                    <ChevronLeft size={16} />
+                </button>
+                <button 
+                    onClick={handleNext} 
+                    disabled={startIndex + VISIBLE_COUNT >= YEARS.length}
+                    className="p-1.5 rounded-md hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:shadow-none text-slate-600 transition-all"
+                >
+                    <ChevronRight size={16} />
+                </button>
+            </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {historicalData.map((yearData, idx) => {
-            const yearAvg = Math.round(yearData.reduce((acc, curr) => acc + curr.value, 0) / 12);
-            const prevYearAvg = idx > 0 
-                ? Math.round(historicalData[idx-1].reduce((acc, curr) => acc + curr.value, 0) / 12) 
+        {visibleData.map((yearData, idx) => {
+            const yearAvg = Math.round(yearData.months.reduce((acc, curr) => acc + curr.value, 0) / 12);
+            
+            // Calculate difference from previous year
+            const actualIndex = startIndex + idx;
+            const prevYearAvg = actualIndex > 0 
+                ? Math.round(historicalData[actualIndex-1].months.reduce((acc, curr) => acc + curr.value, 0) / 12) 
                 : yearAvg;
             const diff = yearAvg - prevYearAvg;
 
+            const isFuture = yearData.year > new Date().getFullYear();
+
             return (
-                <div key={YEARS[idx]} className="bg-slate-50/50 rounded-xl p-4 border border-slate-100 hover:border-blue-100 transition-colors">
+                <div key={yearData.year} className={`relative rounded-xl p-4 border transition-colors ${isFuture ? 'bg-indigo-50/40 border-indigo-200 border-dashed' : 'bg-slate-50/50 border-slate-100 hover:border-blue-100'}`}>
+                    {isFuture && (
+                        <div className="absolute -top-2.5 right-4 px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[9px] font-bold rounded-full uppercase tracking-wider border border-indigo-200 shadow-sm">
+                            Projected
+                        </div>
+                    )}
                     <div className="flex justify-between items-end mb-4 px-1">
                         <div>
-                            <div className="text-xl font-bold text-slate-800 leading-none">{YEARS[idx]}</div>
-                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Yearly Avg</div>
+                            <div className={`text-xl font-bold leading-none ${isFuture ? 'text-indigo-900' : 'text-slate-800'}`}>{yearData.year}</div>
+                            <div className={`text-[10px] font-bold uppercase tracking-wider mt-1 ${isFuture ? 'text-indigo-400' : 'text-slate-400'}`}>
+                                {isFuture ? 'Estimated Avg' : 'Yearly Avg'}
+                            </div>
                         </div>
                         <div className="text-right">
-                             <div className="text-2xl font-black text-slate-700 leading-none">{yearAvg}</div>
-                             {idx > 0 && diff !== 0 && (
+                             <div className={`text-2xl font-black leading-none ${isFuture ? 'text-indigo-800' : 'text-slate-700'}`}>{yearAvg}</div>
+                             {actualIndex > 0 && diff !== 0 && (
                                  <div className={`text-[10px] font-bold flex items-center justify-end gap-0.5 ${diff < 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                                      {diff < 0 ? <TrendingDown size={10} /> : <TrendingUp size={10} />}
                                      {Math.abs(diff)}%
@@ -130,10 +189,10 @@ const HeatmapWidget: React.FC<HeatmapWidgetProps> = ({ ward }) => {
                     </div>
                     
                     <div className="grid grid-cols-4 gap-2">
-                        {yearData.map((cell, cIdx) => (
+                        {yearData.months.map((cell, cIdx) => (
                             <div 
                                 key={cIdx} 
-                                className={`aspect-square rounded-lg flex flex-col items-center justify-center relative group cursor-default transition-transform hover:scale-105 hover:z-10 shadow-sm ${getColor(cell.value)}`}
+                                className={`aspect-square rounded-lg flex flex-col items-center justify-center relative group cursor-default transition-transform hover:scale-105 hover:z-10 shadow-sm ${getColor(cell.value)} ${isFuture ? 'opacity-90' : ''}`}
                             >
                                 <span className="text-[10px] font-bold text-white/90 drop-shadow-sm">{cell.month}</span>
                                 
